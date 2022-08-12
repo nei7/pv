@@ -1,0 +1,18 @@
+[package]
+name = "pv"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.1.18", features = ["derive"] }
+data-encoding = "2.3.2"
+rust-crypto = "0.2.36"
+chrono = "0.4"
+rand_core = {version = "0.6.0", features = ["getrandom"] }
+serde = { version = "1.0.143", features = ["derive"] }
+serde_json = "1.0.83"
+dirs = "4.0"
+dialoguer = "0.10.2"
+colored = "2.0.0"
