@@ -1,8 +1,7 @@
 use crate::cli;
+use crate::errors::PasswordError;
 use crate::pass;
 use dialoguer::{theme::ColorfulTheme, Password};
-use std::fs::File;
-use std::path::PathBuf;
 
 pub fn init() -> Result<(), i32> {
     let password = Password::with_theme(&ColorfulTheme::default())
@@ -20,12 +19,15 @@ pub fn init() -> Result<(), i32> {
     };
 
     let path = cli::get_password_file_path();
-    let mut password_file = match File::open(&path) {
-        Err(_) => File::create(&path).unwrap(),
-        Ok(f) => f,
-    };
 
-    match store.save_store(&mut password_file) {
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    options.write(true);
+    options.create(true);
+
+    let mut file = options.open(path).map_err(|_| 1)?;
+
+    match store.save_store(&mut file) {
         Ok(_) => println!("Info: your password vault has been successfully initialized"),
         Err(e) => {
             println!("Error: {}", e);
@@ -36,4 +38,22 @@ pub fn init() -> Result<(), i32> {
     Ok(())
 }
 
-pub fn list_passwords(store: &mut pass::PasswordStore) -> Result<(), i32> {}
+pub fn add_password(args: cli::AddCommand, store: &mut pass::PasswordStore) -> Result<(), i32> {
+    if store.has_password(args.name.as_str()) {
+        println!("Error: {}", PasswordError::ConflictError);
+        return Err(1);
+    }
+
+    let password = Password::with_theme(&ColorfulTheme::default())
+        .with_prompt(format!("Enter password for {}: ", args.name))
+        .with_confirmation("Repeat password", "Error: passwords don't match")
+        .interact()
+        .map_err(|_| 1)?;
+
+    store
+        .add_password(pass::Password::new(args.name, password))
+        .map_err(|e| {
+            println!("Error: {}", e);
+            return 1;
+        })
+}

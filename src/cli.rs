@@ -1,5 +1,5 @@
-use crate::commands;
-use clap::{AppSettings, Parser, Subcommand};
+use crate::{commands, pass};
+use clap::{AppSettings, Args, Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Password};
 use std::fs::File;
 use std::path::PathBuf;
@@ -8,7 +8,6 @@ use std::path::PathBuf;
 #[clap(name = "pv", author, version, about, long_about = None)]
 #[clap(setting = AppSettings::SubcommandRequired)]
 #[clap(global_setting(AppSettings::DeriveDisplayOrder))]
-
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
@@ -20,7 +19,7 @@ enum Commands {
     Init,
 
     #[clap(name = "add", about = "Adding a password")]
-    Add,
+    Add(AddCommand),
 
     #[clap(name = "list", about = "Listing stored passwords")]
     List,
@@ -30,6 +29,11 @@ enum Commands {
 
     #[clap(name = "delete", about = "Delete specific password")]
     Delete,
+}
+
+#[derive(Debug, Args)]
+pub struct AddCommand {
+    pub name: String,
 }
 
 pub fn get_password_file_path() -> PathBuf {
@@ -53,12 +57,43 @@ pub fn cli_match() -> i32 {
         .with_prompt("Enter master password: ")
         .interact()
         .map_err(|_| 1);
-    
+
     if let Err(i) = master_password {
         return i;
     }
 
-    match cli.command {
-        _ => 127,
+    let password_file_path = get_password_file_path();
+
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    options.write(true);
+    options.create(false);
+    let mut file = match options.open(password_file_path) {
+        Ok(f) => f,
+        Err(_) => return 1,
+    };
+
+    let mut store = match pass::PasswordStore::load_store(master_password.unwrap(), &file) {
+        Ok(store) => store,
+        Err(err) => {
+            println!("Error: {}", err);
+            return 1;
+        }
+    };
+
+    let res = match cli.command {
+        Commands::Add(args) => commands::add_password(args, &mut store),
+        _ => Err(127),
+    };
+
+    match res {
+        Ok(_) => {
+            if let Err(e) = store.save_store(&mut file) {
+                println!("Failed to save data to store: {}", e)
+            }
+
+            0
+        }
+        Err(code) => code,
     }
 }

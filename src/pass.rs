@@ -1,13 +1,15 @@
-use crate::crypto::{self, aes_encrypt, generate_encryption_key};
+use crate::crypto::{self, aes_decrypt, aes_encrypt, generate_encryption_key};
 use crate::errors::PasswordError;
 use serde::{Deserialize, Serialize};
 use serde_json::{self, Error};
 use std::fs::File;
-use std::io::{BufReader, Cursor, Error as IoError, ErrorKind as IoKind, Read, Write};
+use std::io::{
+    BufReader, Cursor, Error as IoError, ErrorKind as IoKind, Read, Seek, SeekFrom, Write,
+};
 use std::ops::Deref;
 
 #[derive(Serialize, Deserialize, Clone)]
-struct Password {
+pub struct Password {
     pub name: String,
     password: String,
 }
@@ -26,7 +28,7 @@ impl Schema {
 }
 
 impl Password {
-    fn new(name: String, password: String) -> Password {
+    pub fn new(name: String, password: String) -> Password {
         Password {
             name: name,
             password: password,
@@ -61,6 +63,9 @@ impl PasswordStore {
         let encrypted = aes_encrypt(json.as_bytes(), &self.key, &iv)
             .map_err(|_| PasswordError::EncryptionError)?;
 
+        file.seek(SeekFrom::Start(0))
+            .and_then(|_| file.set_len(0))?;
+
         file.write_all(&self.salt)?;
         file.write_all(&iv)?;
         file.write_all(&encrypted.as_ref())?;
@@ -69,7 +74,10 @@ impl PasswordStore {
         Ok(())
     }
 
-    pub fn load_store(master_password: String, file: File) -> Result<PasswordStore, PasswordError> {
+    pub fn load_store(
+        master_password: String,
+        file: &File,
+    ) -> Result<PasswordStore, PasswordError> {
         let mut reader = BufReader::new(file);
         let mut buffer = Vec::new();
         reader
@@ -87,8 +95,8 @@ impl PasswordStore {
             }
         })?;
 
-        let iv: [u8; 16] = [0u8; 16];
-        reader.read(&mut salt).and_then(|num_bytes| {
+        let mut iv: [u8; 16] = [0u8; 16];
+        reader.read(&mut iv).and_then(|num_bytes| {
             if num_bytes == 16 {
                 Ok(())
             } else {
@@ -100,11 +108,10 @@ impl PasswordStore {
         reader.read_to_end(&mut blob)?;
 
         let key = generate_encryption_key(master_password.as_str(), &salt);
-        let paswords = match aes_encrypt(blob.deref(), key.as_ref(), &iv) {
+        let paswords = match aes_decrypt(blob.deref(), key.as_ref(), &iv) {
             Ok(decrypted) => {
                 let encoded = String::from_utf8_lossy(decrypted.as_ref()).into_owned();
                 let s: Result<Schema, Error> = serde_json::from_str(encoded.as_str());
-
                 match s {
                     Ok(json) => json.passwords,
                     Err(_) => return Err(PasswordError::InvalidJson),
@@ -123,13 +130,12 @@ impl PasswordStore {
     }
 
     pub fn add_password(&mut self, password: Password) -> Result<(), PasswordError> {
-        if self.get_password(&password.name).is_some() {
-            return Err(PasswordError::NotFoundError);
-        }
-
         self.schema.passwords.push(password);
-
         Ok(())
+    }
+
+    pub fn has_password(&self, name: &str) -> bool {
+        self.get_password(name).is_some()
     }
 
     fn get_password(&self, name: &str) -> Option<Password> {

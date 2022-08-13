@@ -8,6 +8,7 @@ pub enum PasswordError {
     NotFoundError,
     EmptyPasswordError,
     InvalidJson,
+    ConflictError,
     Io(IoError),
 }
 
@@ -26,6 +27,7 @@ impl Display for PasswordError {
             &PasswordError::InvalidJson => f.write_str("invalid json"),
             &PasswordError::Io(ref e) => e.fmt(f),
             &PasswordError::NotFoundError => f.write_str("password not found"),
+            &PasswordError::ConflictError => f.write_str("this password already exist"),
         }
     }
 }
