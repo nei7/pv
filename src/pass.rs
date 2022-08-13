@@ -11,7 +11,7 @@ use std::ops::Deref;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Password {
     pub name: String,
-    password: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -138,7 +138,7 @@ impl PasswordStore {
         self.get_password(name).is_some()
     }
 
-    fn get_password(&self, name: &str) -> Option<Password> {
+    pub fn get_password(&self, name: &str) -> Option<Password> {
         let password = self
             .schema
             .passwords

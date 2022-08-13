@@ -1,6 +1,7 @@
 use crate::cli;
 use crate::errors::PasswordError;
 use crate::pass;
+use cli_clipboard::{ClipboardContext, ClipboardProvider};
 use dialoguer::{theme::ColorfulTheme, Password};
 
 pub fn init() -> Result<(), i32> {
@@ -56,4 +57,25 @@ pub fn add_password(args: cli::AddCommand, store: &mut pass::PasswordStore) -> R
             println!("Error: {}", e);
             return 1;
         })
+}
+
+pub fn get_password(args: cli::GetCommand, store: &mut pass::PasswordStore) -> Result<(), i32> {
+    let password = match store.get_password(&args.name) {
+        Some(pass) => pass,
+        None => return Err(1),
+    };
+
+    let print_password = |_| {
+        println!("Your password: {}", password.password);
+        return 0;
+    };
+
+    let mut ctx = ClipboardContext::new().map_err(print_password)?;
+
+    ctx.set_contents(password.password.to_owned())
+        .map_err(print_password)?;
+
+    println!("password copied to clipoard");
+
+    Ok(())
 }

@@ -1,7 +1,6 @@
 use crate::{commands, pass};
 use clap::{AppSettings, Args, Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Password};
-use std::fs::File;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -25,7 +24,7 @@ enum Commands {
     List,
 
     #[clap(name = "get", about = "Get specific password")]
-    Get,
+    Get(GetCommand),
 
     #[clap(name = "delete", about = "Delete specific password")]
     Delete,
@@ -33,6 +32,11 @@ enum Commands {
 
 #[derive(Debug, Args)]
 pub struct AddCommand {
+    pub name: String,
+}
+
+#[derive(Debug, Args)]
+pub struct GetCommand {
     pub name: String,
 }
 
@@ -68,6 +72,7 @@ pub fn cli_match() -> i32 {
     options.read(true);
     options.write(true);
     options.create(false);
+
     let mut file = match options.open(password_file_path) {
         Ok(f) => f,
         Err(_) => return 1,
@@ -83,6 +88,7 @@ pub fn cli_match() -> i32 {
 
     let res = match cli.command {
         Commands::Add(args) => commands::add_password(args, &mut store),
+        Commands::Get(args) => commands::get_password(args, &mut store),
         _ => Err(127),
     };
 
