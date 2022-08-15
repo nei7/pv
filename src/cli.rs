@@ -18,25 +18,20 @@ enum Commands {
     Init,
 
     #[clap(name = "add", about = "Adding a password")]
-    Add(AddCommand),
+    Add(NameParam),
 
     #[clap(name = "list", about = "Listing stored passwords")]
     List,
 
     #[clap(name = "get", about = "Get specific password")]
-    Get(GetCommand),
+    Get(NameParam),
 
     #[clap(name = "delete", about = "Delete specific password")]
-    Delete,
+    Delete(NameParam),
 }
 
 #[derive(Debug, Args)]
-pub struct AddCommand {
-    pub name: String,
-}
-
-#[derive(Debug, Args)]
-pub struct GetCommand {
+pub struct NameParam {
     pub name: String,
 }
 
@@ -90,6 +85,7 @@ pub fn cli_match() -> i32 {
         Commands::Add(args) => commands::add::exec(args, &mut store),
         Commands::Get(args) => commands::get_password::exec(args, &mut store),
         Commands::List => commands::list_passwords::exec(&mut store),
+        Commands::Delete(args) => commands::delete::exec(args, &mut store),
         _ => Err(127),
     };
 

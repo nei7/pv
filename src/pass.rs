@@ -152,4 +152,20 @@ impl PasswordStore {
     pub fn get_all_passwords(&self) -> Vec<&Password> {
         self.schema.passwords.iter().collect()
     }
+
+    pub fn delete_password(&mut self, name: &str) -> Result<(), PasswordError> {
+        let is_removed = self
+            .schema
+            .passwords
+            .iter()
+            .position(|pass| pass.name == name)
+            .map(|i| self.schema.passwords.remove(i))
+            .is_some();
+
+        if !is_removed {
+            return Err(PasswordError::NotFoundError);
+        }
+
+        Ok(())
+    }
 }

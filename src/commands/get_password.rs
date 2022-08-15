@@ -2,7 +2,7 @@ use crate::cli;
 use crate::pass;
 use crate::utils;
 
-pub fn exec(args: cli::GetCommand, store: &mut pass::PasswordStore) -> Result<(), i32> {
+pub fn exec(args: cli::NameParam, store: &mut pass::PasswordStore) -> Result<(), i32> {
     let password = match store.get_password(&args.name) {
         Some(pass) => pass,
         None => return Err(1),

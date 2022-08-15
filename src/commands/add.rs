@@ -3,7 +3,7 @@ use crate::errors::PasswordError;
 use crate::pass;
 use dialoguer::{theme::ColorfulTheme, Password};
 
-pub fn exec(args: cli::AddCommand, store: &mut pass::PasswordStore) -> Result<(), i32> {
+pub fn exec(args: cli::NameParam, store: &mut pass::PasswordStore) -> Result<(), i32> {
     if store.has_password(args.name.as_str()) {
         println!("Error: {}", PasswordError::ConflictError);
         return Err(1);
