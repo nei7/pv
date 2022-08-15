@@ -1,4 +1,5 @@
 use crate::cli;
+use crate::errors::PasswordError;
 use crate::pass;
 use dialoguer::{theme::ColorfulTheme, Password};
 
@@ -8,6 +9,11 @@ pub fn exec() -> Result<(), i32> {
         .with_confirmation("Repeat master password", "Error: passwords don't match")
         .interact()
         .map_err(|_| 1)?;
+
+    if password.is_empty() {
+        println!("{}", PasswordError::EmptyPasswordError);
+        return Err(1);
+    }
 
     let store = match pass::PasswordStore::new(password.as_str()) {
         Ok(s) => s,
