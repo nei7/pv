@@ -51,7 +51,7 @@ pub fn cli_match() -> i32 {
     let cli: Cli = Cli::parse();
 
     if matches!(cli.command, Commands::Init) {
-        return match commands::init() {
+        return match commands::init::exec() {
             Err(i) => i,
             _ => 0,
         };
@@ -87,8 +87,9 @@ pub fn cli_match() -> i32 {
     };
 
     let res = match cli.command {
-        Commands::Add(args) => commands::add_password(args, &mut store),
-        Commands::Get(args) => commands::get_password(args, &mut store),
+        Commands::Add(args) => commands::add::exec(args, &mut store),
+        Commands::Get(args) => commands::get_password::exec(args, &mut store),
+        Commands::List => commands::list_passwords::exec(&mut store),
         _ => Err(127),
     };
 
