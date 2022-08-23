@@ -169,3 +169,43 @@ impl PasswordStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::pass::{self, Password};
+
+    #[test]
+    fn test_create_password_store() {
+        let store = pass::PasswordStore::new("123").unwrap();
+        assert_eq!(store.get_all_passwords().len(), 0)
+    }
+
+    #[test]
+    fn test_add_password() {
+        let mut store = pass::PasswordStore::new("123").unwrap();
+
+        let pass = Password::new("e".to_string(), "123".to_string());
+        assert_eq!(pass.name, "e");
+        assert_eq!(pass.password, "123");
+
+        assert!(store.add_password(pass).is_ok());
+
+        let added_password = store.get_password("e").unwrap();
+        assert_eq!(added_password.name, "e");
+        assert_eq!(added_password.password, "123");
+
+        assert_eq!(store.get_all_passwords().len(), 1);
+    }
+
+    #[test]
+    fn test_delete_password() {
+        let mut store = pass::PasswordStore::new("123").unwrap();
+        let pass = Password::new("e".to_string(), "123".to_string());
+        assert!(store.add_password(pass).is_ok());
+        assert_eq!(store.get_all_passwords().len(), 1);
+
+        store.delete_password("e").unwrap();
+
+        assert_eq!(store.get_all_passwords().len(), 0);
+    }
+}
