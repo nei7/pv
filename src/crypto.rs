@@ -89,3 +89,26 @@ pub fn generate_random_salt() -> IoResult<[u8; 32]> {
     OsRng.fill_bytes(&mut bytes);
     Ok(bytes)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::crypto;
+
+    #[test]
+    fn test_generate_random_iv() {
+        assert_eq!(crypto::generate_random_iv().unwrap().len(), 16);
+    }
+
+    #[test]
+    fn test_generate_random_salt() {
+        assert_eq!(crypto::generate_random_salt().unwrap().len(), 32);
+    }
+
+    #[test]
+    fn test_generate_encryption_key() {
+        assert_eq!(
+            crypto::generate_encryption_key("hi", &crypto::generate_random_salt().unwrap()).len(),
+            32
+        )
+    }
+}

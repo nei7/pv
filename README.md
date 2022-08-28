@@ -35,3 +35,21 @@ pv add [name]
 ```bash
 pv list
 ```
+
+### Updating password
+
+```bash
+pv update [name]
+```
+
+### Deleting passwords
+
+```bash
+pv delete [name]
+```
+
+### Getting single password
+
+```bash
+pv get [name]
+```
