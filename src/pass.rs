@@ -138,6 +138,12 @@ impl PasswordStore {
         self.get_password(name).is_some()
     }
 
+    pub fn change_password(&mut self, name: &str, new_password: &str) -> Result<(), PasswordError> {
+        self.delete_password(name)?;
+        self.add_password(Password::new(name.to_string(), new_password.to_string()))?;
+        Ok(())
+    }
+
     pub fn get_password(&self, name: &str) -> Option<Password> {
         let password = self
             .schema

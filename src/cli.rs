@@ -28,6 +28,9 @@ enum Commands {
 
     #[clap(name = "delete", about = "Delete specific password")]
     Delete(NameParam),
+
+    #[clap(name = "update", about = "update password")]
+    Update(NameParam),
 }
 
 #[derive(Debug, Args)]
@@ -86,6 +89,7 @@ pub fn cli_match() -> i32 {
         Commands::Get(args) => commands::get_password::exec(args, &mut store),
         Commands::List => commands::list_passwords::exec(&mut store),
         Commands::Delete(args) => commands::delete::exec(args, &mut store),
+        Commands::Update(args) => commands::update::exec(args, &mut store),
         _ => Err(127),
     };
 
@@ -94,7 +98,6 @@ pub fn cli_match() -> i32 {
             if let Err(e) = store.save_store(&mut file) {
                 println!("Failed to save data to store: {}", e)
             }
-
             0
         }
         Err(code) => code,
